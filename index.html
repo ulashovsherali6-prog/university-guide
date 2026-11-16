@@ -1,0 +1,728 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Search German universities and explore information for prospective applicants.">
+  <meta name="robots" content="index, follow">
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="University Guide | Germany">
+  <meta property="og:description" content="Search German universities and explore programs and application information.">
+  <meta property="og:url" content="https://ulashovsherali6-prog.github.io/university-guide/">
+  <link rel="canonical" href="https://ulashovsherali6-prog.github.io/university-guide/">
+  <title>University Guide | Germany</title>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.0/dist/umd/supabase.min.js"></script>
+  <style>
+    :root {
+      color-scheme: light;
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      color: #172b3a;
+      background: #f5f7f8;
+      font-synthesis: none;
+      text-rendering: optimizeLegibility;
+      --blue: #175c78;
+      --blue-dark: #104359;
+      --muted: #5e6f79;
+      --line: #dce4e8;
+    }
+    * { box-sizing: border-box; }
+    body { margin: 0; min-width: 320px; }
+    button, input, textarea { font: inherit; }
+    button, a { -webkit-tap-highlight-color: transparent; }
+    a { color: var(--blue); }
+    .topbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 20px;
+      padding: 18px max(24px, calc((100% - 1120px) / 2));
+      background: #fff;
+      border-bottom: 1px solid var(--line);
+    }
+    .brand { color: #173a4b; font-size: 17px; font-weight: 750; text-decoration: none; }
+    .topbar-note { color: var(--muted); font-size: 13px; }
+    .topbar-tools { display: flex; align-items: center; gap: 16px; }
+    .language-picker { display: flex; align-items: center; gap: 8px; color: var(--muted); font-size: 13px; }
+    .language-picker select { min-height: 38px; padding: 6px 28px 6px 10px; color: #172b3a; background: #fff; border: 1px solid #bdcbd2; border-radius: 7px; }
+    main { width: min(100% - 40px, 1000px); margin: 0 auto; padding: 48px 0 72px; }
+    .hero { max-width: 720px; margin-bottom: 30px; }
+    .eyebrow { color: var(--blue); font-size: 12px; font-weight: 750; letter-spacing: .12em; text-transform: uppercase; }
+    h1 { margin: 8px 0 12px; color: #143b4f; font-size: clamp(32px, 5vw, 48px); line-height: 1.12; letter-spacing: -.035em; }
+    h2 { margin: 0 0 10px; color: #183e52; font-size: 21px; }
+    h3 { margin: 0; color: #173d50; font-size: 18px; }
+    p { line-height: 1.6; }
+    .intro { max-width: 650px; margin: 0; color: var(--muted); font-size: 17px; }
+    .panel {
+      margin-top: 20px;
+      padding: 24px;
+      background: #fff;
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      box-shadow: 0 5px 18px rgb(22 53 68 / 4%);
+    }
+    .panel-heading { margin-bottom: 16px; }
+    .panel-heading p { margin: 4px 0 0; color: var(--muted); }
+    .notice { margin: 16px 0 0; padding: 12px 14px; border-radius: 8px; background: #eef5f7; color: #385868; font-size: 14px; }
+    .notice.error { background: #fff0ef; color: #9c2c26; }
+    .notice.success { background: #edf8ef; color: #236331; }
+    .hidden { display: none !important; }
+    .form-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }
+    .field { display: grid; gap: 6px; min-width: 0; }
+    .field.full { grid-column: 1 / -1; }
+    label { color: #314b59; font-size: 13px; font-weight: 650; }
+    input, textarea {
+      width: 100%;
+      min-height: 44px;
+      padding: 10px 12px;
+      color: #172b3a;
+      background: #fff;
+      border: 1px solid #bdcbd2;
+      border-radius: 7px;
+    }
+    textarea { min-height: 88px; resize: vertical; }
+    input:focus, textarea:focus { outline: 3px solid rgb(23 92 120 / 15%); border-color: var(--blue); }
+    .actions { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin-top: 16px; }
+    button {
+      min-height: 42px;
+      padding: 9px 16px;
+      border: 1px solid var(--blue);
+      border-radius: 7px;
+      background: var(--blue);
+      color: #fff;
+      font-weight: 650;
+      cursor: pointer;
+    }
+    button:hover { background: var(--blue-dark); }
+    button:disabled { cursor: wait; opacity: .65; }
+    button.secondary { color: var(--blue); background: #fff; }
+    button.secondary:hover { background: #eef5f7; }
+    .account-status { display: flex; align-items: center; justify-content: space-between; gap: 16px; }
+    .account-status p { margin: 0; color: var(--muted); overflow-wrap: anywhere; }
+    .search-row { display: flex; gap: 10px; }
+    .search-row input { flex: 1; }
+    .results { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; margin-top: 18px; }
+    .university-card { padding: 18px; border: 1px solid var(--line); border-radius: 9px; background: #fff; }
+    .university-card .location { margin: 5px 0 12px; color: var(--muted); font-size: 14px; }
+    .university-card .description { margin: 0 0 12px; line-height: 1.55; }
+    .university-card dl { display: grid; grid-template-columns: 90px minmax(0, 1fr); gap: 7px 10px; margin: 0; font-size: 13px; }
+    .university-card dt { color: var(--muted); font-weight: 650; }
+    .university-card dd { margin: 0; overflow-wrap: anywhere; }
+    .university-card .links { display: flex; flex-wrap: wrap; gap: 14px; margin-top: 15px; font-size: 14px; font-weight: 650; }
+    .empty { grid-column: 1 / -1; margin: 0; padding: 20px; border: 1px dashed #bdcbd2; border-radius: 8px; color: var(--muted); text-align: center; }
+    footer { padding: 22px 20px; color: var(--muted); text-align: center; font-size: 13px; }
+    @media (max-width: 640px) {
+      .topbar { padding: 15px 20px; }
+      .topbar-note { display: none; }
+      main { width: min(100% - 28px, 1000px); padding-top: 32px; }
+      .panel { padding: 18px; }
+      .form-grid, .results { grid-template-columns: 1fr; }
+      .search-row { align-items: stretch; flex-direction: column; }
+      .account-status { align-items: flex-start; flex-direction: column; }
+      .university-card dl { grid-template-columns: 78px minmax(0, 1fr); }
+    }
+  </style>
+</head>
+<body>
+  <header class="topbar">
+    <a class="brand" href="index.html" data-i18n="brand">University Guide</a>
+    <div class="topbar-tools">
+      <span class="topbar-note" data-i18n="headerNote">Explore study options in Germany</span>
+      <label class="language-picker" for="languageSelect">
+        <span data-i18n="language">Language</span>
+        <select id="languageSelect" aria-label="Language">
+          <option value="en">English</option>
+          <option value="uz">O‘zbekcha</option>
+          <option value="ru">Русский</option>
+        </select>
+      </label>
+    </div>
+  </header>
+
+  <main>
+    <section class="hero" aria-labelledby="pageTitle">
+      <p class="eyebrow" data-i18n="eyebrow">Plan your next step</p>
+      <h1 id="pageTitle" data-i18n="pageTitle">Find a university that fits your plans.</h1>
+      <p class="intro" data-i18n="intro">Search university profiles, compare key application information, and follow official links for the latest requirements.</p>
+    </section>
+
+    <section class="panel" aria-labelledby="accountHeading">
+      <div class="panel-heading">
+        <h2 id="accountHeading" data-i18n="account">Your account</h2>
+        <p data-i18n="accountHint">Sign in to search the university directory.</p>
+      </div>
+      <div id="loggedOut">
+        <form id="authForm">
+          <div class="form-grid">
+            <div class="field">
+              <label for="firstName" data-i18n="firstName">First name</label>
+              <input id="firstName" name="firstName" autocomplete="given-name" required>
+            </div>
+            <div class="field">
+              <label for="lastName" data-i18n="lastName">Last name</label>
+              <input id="lastName" name="lastName" autocomplete="family-name" required>
+            </div>
+            <div class="field">
+              <label for="email" data-i18n="email">Email</label>
+              <input id="email" name="email" type="email" autocomplete="email" required>
+            </div>
+            <div class="field">
+              <label for="password" data-i18n="passwordLabel">Password (at least 6 characters)</label>
+              <input id="password" name="password" type="password" minlength="6" autocomplete="current-password" required>
+            </div>
+          </div>
+          <div class="actions">
+            <button id="signUpButton" type="button" data-i18n="createAccount">Create account</button>
+            <button id="logInButton" class="secondary" type="button" data-i18n="logIn">Log in</button>
+            <button id="resendConfirmationButton" class="secondary" type="button" data-i18n="resendConfirmation">Resend confirmation email</button>
+          </div>
+        </form>
+      </div>
+      <div id="loggedIn" class="account-status hidden">
+        <p><span data-i18n="signedInAs">Signed in as</span> <strong id="userName"></strong></p>
+        <button id="logOutButton" class="secondary" type="button" data-i18n="logOut">Log out</button>
+      </div>
+      <p id="authMsg" class="notice" role="status" aria-live="polite"></p>
+    </section>
+
+    <div id="universityArea" class="hidden">
+      <section id="adminPanel" class="panel hidden" aria-labelledby="adminHeading">
+        <div class="panel-heading">
+          <h2 id="adminHeading" data-i18n="addUniversity">Add a university</h2>
+          <p data-i18n="adminHint">Only accounts added as administrators can publish directory entries.</p>
+        </div>
+        <form id="universityForm">
+          <div class="form-grid">
+            <div class="field">
+              <label for="universityName" data-i18n="universityName">University name</label>
+              <input id="universityName" name="name" maxlength="180" required>
+            </div>
+            <div class="field">
+              <label for="city" data-i18n="city">City</label>
+              <input id="city" name="city" maxlength="100" required>
+            </div>
+            <div class="field">
+              <label for="country" data-i18n="country">Country</label>
+              <input id="country" name="country" value="Germany" maxlength="100" required>
+            </div>
+            <div class="field">
+              <label for="programs" data-i18n="programs">Programs or subject areas</label>
+              <input id="programs" name="programs" maxlength="500" data-i18n-placeholder="programPlaceholder" placeholder="e.g. Computer science, engineering">
+            </div>
+            <div class="field">
+              <label for="tuition" data-i18n="tuition">Tuition and fees</label>
+              <input id="tuition" name="tuition" maxlength="500" data-i18n-placeholder="tuitionPlaceholder" placeholder="Include a note to verify current fees">
+            </div>
+            <div class="field">
+              <label for="deadline" data-i18n="deadline">Application deadline</label>
+              <input id="deadline" name="deadline" maxlength="300" data-i18n-placeholder="deadlinePlaceholder" placeholder="Use program-specific dates where possible">
+            </div>
+            <div class="field">
+              <label for="officialUrl" data-i18n="officialSite">Official university website</label>
+              <input id="officialUrl" name="official_url" type="url" maxlength="500" placeholder="https://..." required>
+            </div>
+            <div class="field">
+              <label for="applicationUrl" data-i18n="applicationLink">Application information link</label>
+              <input id="applicationUrl" name="application_url" type="url" maxlength="500" placeholder="https://...">
+            </div>
+            <div class="field full">
+              <label for="description" data-i18n="aboutUniversity">About the university</label>
+              <textarea id="description" name="description" maxlength="3000" required></textarea>
+            </div>
+          </div>
+          <div class="actions">
+            <button id="saveUniversityButton" type="submit" data-i18n="saveUniversity">Save university</button>
+          </div>
+          <p id="adminMsg" class="notice hidden" role="status" aria-live="polite"></p>
+        </form>
+      </section>
+
+      <section id="universities" class="panel" aria-labelledby="searchHeading">
+        <div class="panel-heading">
+          <h2 id="searchHeading" data-i18n="searchUniversities">Search universities</h2>
+          <p data-i18n="searchHint">Search by university, city, country, or subject area.</p>
+        </div>
+        <form id="searchForm" class="search-row">
+          <label class="hidden" for="query" data-i18n="searchLabel">University search</label>
+          <input id="query" name="query" maxlength="120" data-i18n-placeholder="queryPlaceholder" placeholder="Try “Berlin” or “engineering”">
+          <button id="searchButton" type="submit" data-i18n="searchButton">Search</button>
+        </form>
+        <p id="searchMsg" class="notice" role="status" aria-live="polite"></p>
+        <div id="results" class="results" aria-live="polite"></div>
+      </section>
+    </div>
+  </main>
+  <footer data-i18n="footer">Application details can change. Confirm deadlines, fees, and requirements with each university.</footer>
+
+  <script>
+    const SUPABASE_URL = "https://zscihioosaivgcasrldx.supabase.co";
+    const SUPABASE_KEY = "sb_publishable_RJHCoeWljNlj0Mv_oapraQ__stOLEfI";
+    const authForm = document.getElementById("authForm");
+    const searchForm = document.getElementById("searchForm");
+    const universityForm = document.getElementById("universityForm");
+    const authMsg = document.getElementById("authMsg");
+    const searchMsg = document.getElementById("searchMsg");
+    const adminMsg = document.getElementById("adminMsg");
+    const results = document.getElementById("results");
+    const translations = {
+      en: {
+        brand: "University Guide", headerNote: "Explore study options in Germany", language: "Language",
+        eyebrow: "Plan your next step", pageTitle: "Find a university that fits your plans.",
+        intro: "Search university profiles, compare key application information, and follow official links for the latest requirements.",
+        account: "Your account", accountHint: "Sign in to search the university directory.",
+        firstName: "First name", lastName: "Last name", email: "Email", passwordLabel: "Password (at least 6 characters)",
+        createAccount: "Create account", logIn: "Log in", resendConfirmation: "Resend confirmation email",
+        signedInAs: "Signed in as", logOut: "Log out", addUniversity: "Add a university",
+        adminHint: "Only accounts added as administrators can publish directory entries.",
+        universityName: "University name", city: "City", country: "Country",
+        programs: "Programs or subject areas", programPlaceholder: "e.g. Computer science, engineering",
+        tuition: "Tuition and fees", tuitionPlaceholder: "Include a note to verify current fees",
+        deadline: "Application deadline", deadlinePlaceholder: "Use program-specific dates where possible",
+        officialSite: "Official university website", applicationLink: "Application information link",
+        aboutUniversity: "About the university", saveUniversity: "Save university",
+        searchUniversities: "Search universities", searchHint: "Search by university, city, country, or subject area.",
+        searchLabel: "University search", queryPlaceholder: "Try “Berlin” or “engineering”", searchButton: "Search",
+        footer: "Application details can change. Confirm deadlines, fees, and requirements with each university.",
+        programsDetail: "Programs", tuitionDetail: "Tuition", deadlineDetail: "Deadline",
+        officialWebsite: "Official website", applicationInformation: "Application information",
+        noResults: "No universities matched that search. Try another name, city, or subject.",
+        loading: "Loading university information...", universityCountOne: "university found.", universityCountMany: "universities found.",
+        searchError: "Could not load universities: {error}", accountRoleError: "Signed in, but administrator status could not be loaded: {error}",
+        createBusy: "Creating account...", loginBusy: "Logging in...", resendBusy: "Sending...", logoutBusy: "Logging out...",
+        saveBusy: "Saving...", searchingBusy: "Searching...", accountCreated: "Account created. Check your email to confirm it, then log in.",
+        accountReady: "Your account is ready.", resendSent: "If this address has an unconfirmed account, a fresh confirmation link has been sent. Check your inbox and spam folder.",
+        loggedOutMessage: "You have logged out.", adminOnly: "Only an administrator can add university information.",
+        universitySaved: "University saved to the shared directory.", serviceUnavailable: "The account service could not be loaded. Check your connection and reload the page.",
+        sessionError: "Could not check your account session: {error}", signupError: "Could not create account: {error}",
+        loginError: "Could not log in: {error}", resendError: "Could not resend confirmation email: {error}",
+        logoutError: "Could not log out: {error}", saveError: "Could not save university: {error}",
+        signupEmailRedirect: "Account created. Check your email to confirm it, then log in.",
+        universitySavedCount: "university saved."
+      },
+      uz: {
+        brand: "Universitetlar qo‘llanmasi", headerNote: "Germaniyada ta’lim imkoniyatlarini o‘rganing", language: "Til",
+        eyebrow: "Keyingi qadamingizni rejalashtiring", pageTitle: "Rejalaringizga mos universitetni toping.",
+        intro: "Universitetlar haqidagi ma’lumotlarni qidiring, ariza topshirish shartlarini solishtiring va eng yangi ma’lumotlar uchun rasmiy havolalardan foydalaning.",
+        account: "Hisobingiz", accountHint: "Universitetlar ro‘yxatini qidirish uchun tizimga kiring.",
+        firstName: "Ism", lastName: "Familiya", email: "Elektron pochta", passwordLabel: "Parol (kamida 6 ta belgi)",
+        createAccount: "Hisob yaratish", logIn: "Kirish", resendConfirmation: "Tasdiqlash xatini qayta yuborish",
+        signedInAs: "Tizimga kirgan foydalanuvchi:", logOut: "Chiqish", addUniversity: "Universitet qo‘shish",
+        adminHint: "Ro‘yxatga universitet qo‘shish faqat administratorlarga ruxsat etiladi.",
+        universityName: "Universitet nomi", city: "Shahar", country: "Mamlakat",
+        programs: "Yo‘nalishlar yoki fan sohalari", programPlaceholder: "Masalan: kompyuter fanlari, muhandislik",
+        tuition: "O‘qish va boshqa to‘lovlar", tuitionPlaceholder: "Joriy to‘lovlarni tekshirish kerakligini yozing",
+        deadline: "Ariza topshirish muddati", deadlinePlaceholder: "Imkon qadar yo‘nalishga xos muddatlarni kiriting",
+        officialSite: "Universitetning rasmiy sayti", applicationLink: "Ariza topshirish ma’lumotlari havolasi",
+        aboutUniversity: "Universitet haqida", saveUniversity: "Universitetni saqlash",
+        searchUniversities: "Universitetlarni qidirish", searchHint: "Universitet, shahar, mamlakat yoki yo‘nalish bo‘yicha qidiring.",
+        searchLabel: "Universitet qidiruvi", queryPlaceholder: "Masalan: Berlin yoki muhandislik", searchButton: "Qidirish",
+        footer: "Ariza ma’lumotlari o‘zgarishi mumkin. Muddatlar, to‘lovlar va talablarni universitetdan tasdiqlang.",
+        programsDetail: "Yo‘nalishlar", tuitionDetail: "To‘lovlar", deadlineDetail: "Muddat",
+        officialWebsite: "Rasmiy sayt", applicationInformation: "Ariza haqida ma’lumot",
+        noResults: "Bu so‘rov bo‘yicha universitet topilmadi. Boshqa nom, shahar yoki yo‘nalishni kiriting.",
+        loading: "Universitet ma’lumotlari yuklanmoqda...", universityCountOne: "ta universitet topildi.", universityCountMany: "ta universitet topildi.",
+        searchError: "Universitetlarni yuklab bo‘lmadi: {error}", accountRoleError: "Tizimga kirdingiz, ammo administrator holatini aniqlab bo‘lmadi: {error}",
+        createBusy: "Hisob yaratilmoqda...", loginBusy: "Tizimga kirilmoqda...", resendBusy: "Yuborilmoqda...", logoutBusy: "Tizimdan chiqilmoqda...",
+        saveBusy: "Saqlanmoqda...", searchingBusy: "Qidirilmoqda...", accountCreated: "Hisob yaratildi. Tasdiqlash xatini elektron pochtangizdan tekshiring, so‘ng tizimga kiring.",
+        accountReady: "Hisobingiz tayyor.", resendSent: "Agar bu manzilda tasdiqlanmagan hisob bo‘lsa, yangi havola yuborildi. Kiruvchi xatlar va spam papkasini tekshiring.",
+        loggedOutMessage: "Tizimdan chiqdingiz.", adminOnly: "Universitet ma’lumotlarini faqat administrator qo‘sha oladi.",
+        universitySaved: "Universitet umumiy ro‘yxatga saqlandi.", serviceUnavailable: "Hisob xizmati yuklanmadi. Internet aloqasini tekshirib, sahifani qayta yuklang.",
+        sessionError: "Hisob seansini tekshirib bo‘lmadi: {error}", signupError: "Hisob yaratib bo‘lmadi: {error}",
+        loginError: "Tizimga kirib bo‘lmadi: {error}", resendError: "Tasdiqlash xatini qayta yuborib bo‘lmadi: {error}",
+        logoutError: "Tizimdan chiqib bo‘lmadi: {error}", saveError: "Universitetni saqlab bo‘lmadi: {error}",
+        signupEmailRedirect: "Hisob yaratildi. Tasdiqlash xatini elektron pochtangizdan tekshiring, so‘ng tizimga kiring.",
+        universitySavedCount: "ta universitet saqlandi."
+      },
+      ru: {
+        brand: "Справочник университетов", headerNote: "Изучайте возможности обучения в Германии", language: "Язык",
+        eyebrow: "Планируйте следующий шаг", pageTitle: "Найдите университет, который вам подходит.",
+        intro: "Ищите информацию об университетах, сравнивайте условия поступления и переходите по официальным ссылкам, чтобы узнать актуальные требования.",
+        account: "Ваша учётная запись", accountHint: "Войдите, чтобы искать университеты в каталоге.",
+        firstName: "Имя", lastName: "Фамилия", email: "Электронная почта", passwordLabel: "Пароль (не менее 6 символов)",
+        createAccount: "Создать учётную запись", logIn: "Войти", resendConfirmation: "Отправить письмо для подтверждения ещё раз",
+        signedInAs: "Вы вошли как:", logOut: "Выйти", addUniversity: "Добавить университет",
+        adminHint: "Добавлять университеты в каталог могут только администраторы.",
+        universityName: "Название университета", city: "Город", country: "Страна",
+        programs: "Программы или направления", programPlaceholder: "Например: информатика, инженерия",
+        tuition: "Стоимость обучения и сборы", tuitionPlaceholder: "Укажите, что актуальную стоимость нужно проверить",
+        deadline: "Срок подачи заявки", deadlinePlaceholder: "По возможности укажите сроки для конкретной программы",
+        officialSite: "Официальный сайт университета", applicationLink: "Ссылка с информацией о поступлении",
+        aboutUniversity: "Об университете", saveUniversity: "Сохранить университет",
+        searchUniversities: "Поиск университетов", searchHint: "Ищите по названию университета, городу, стране или направлению.",
+        searchLabel: "Поиск университета", queryPlaceholder: "Например: Берлин или инженерия", searchButton: "Найти",
+        footer: "Информация о поступлении может меняться. Уточняйте сроки, стоимость и требования в университете.",
+        programsDetail: "Программы", tuitionDetail: "Стоимость", deadlineDetail: "Срок",
+        officialWebsite: "Официальный сайт", applicationInformation: "Информация о поступлении",
+        noResults: "По запросу ничего не найдено. Попробуйте другое название, город или направление.",
+        loading: "Загружаем информацию об университетах...", universityCountOne: "университет найден.", universityCountMany: "университетов найдено.",
+        searchError: "Не удалось загрузить университеты: {error}", accountRoleError: "Вы вошли, но не удалось проверить статус администратора: {error}",
+        createBusy: "Создаём учётную запись...", loginBusy: "Выполняется вход...", resendBusy: "Отправляем...", logoutBusy: "Выполняется выход...",
+        saveBusy: "Сохраняем...", searchingBusy: "Ищем...", accountCreated: "Учётная запись создана. Подтвердите адрес по ссылке в письме, затем войдите.",
+        accountReady: "Учётная запись готова.", resendSent: "Если для этого адреса есть неподтверждённая учётная запись, отправлена новая ссылка. Проверьте входящие и папку со спамом.",
+        loggedOutMessage: "Вы вышли из системы.", adminOnly: "Добавлять информацию об университетах может только администратор.",
+        universitySaved: "Университет добавлен в общий каталог.", serviceUnavailable: "Не удалось загрузить службу учётных записей. Проверьте подключение и обновите страницу.",
+        sessionError: "Не удалось проверить сеанс учётной записи: {error}", signupError: "Не удалось создать учётную запись: {error}",
+        loginError: "Не удалось войти: {error}", resendError: "Не удалось отправить письмо повторно: {error}",
+        logoutError: "Не удалось выйти: {error}", saveError: "Не удалось сохранить университет: {error}",
+        signupEmailRedirect: "Учётная запись создана. Подтвердите адрес по ссылке в письме, затем войдите.",
+        universitySavedCount: "университет добавлен."
+      }
+    };
+    let db;
+    let activeUserId = null;
+    let activeSearch = 0;
+    let isAdmin = false;
+    let currentLanguage = "en";
+    let latestUniversities = [];
+
+    function t(key, values) {
+      let text = translations[currentLanguage][key] || translations.en[key] || key;
+      if (values) {
+        for (const [name, value] of Object.entries(values)) {
+          text = text.replace(`{${name}}`, value);
+        }
+      }
+      return text;
+    }
+
+    function applyLanguage(language) {
+      currentLanguage = Object.hasOwn(translations, language) ? language : "en";
+      document.documentElement.lang = currentLanguage;
+      document.title = currentLanguage === "uz"
+        ? "Universitetlar qo‘llanmasi | Germaniya"
+        : currentLanguage === "ru" ? "Справочник университетов | Германия" : "University Guide | Germany";
+      document.getElementById("languageSelect").value = currentLanguage;
+      document.querySelectorAll("[data-i18n]").forEach((element) => {
+        element.textContent = t(element.dataset.i18n);
+      });
+      document.querySelectorAll("[data-i18n-placeholder]").forEach((element) => {
+        element.placeholder = t(element.dataset.i18nPlaceholder);
+      });
+      document.getElementById("languageSelect").setAttribute("aria-label", t("language"));
+      renderUniversities(latestUniversities);
+    }
+
+    function getEmailRedirectUrl() {
+      return new URL(window.location.pathname, window.location.origin).href;
+    }
+
+    function showMessage(element, message, kind) {
+      element.textContent = message;
+      element.classList.remove("hidden", "error", "success");
+      if (kind) element.classList.add(kind);
+    }
+
+    function clearMessage(element) {
+      element.textContent = "";
+      element.classList.add("hidden");
+      element.classList.remove("error", "success");
+    }
+
+    function setBusy(button, busy, label) {
+      if (busy) {
+        if (!button.disabled) button.dataset.originalLabel = button.textContent;
+        button.textContent = label;
+      } else if (button.dataset.originalLabel) {
+        button.textContent = button.dataset.originalLabel;
+        delete button.dataset.originalLabel;
+      }
+      button.disabled = busy;
+    }
+
+    function showLoginMessage(message, kind) {
+      showMessage(authMsg, message, kind);
+    }
+
+    function safeLink(value, label) {
+      if (!value) return null;
+      try {
+        const url = new URL(value);
+        if (url.protocol !== "https:" && url.protocol !== "http:") return null;
+        const link = document.createElement("a");
+        link.href = url.href;
+        link.target = "_blank";
+        link.rel = "noopener noreferrer";
+        link.textContent = label;
+        return link;
+      } catch {
+        return null;
+      }
+    }
+
+    function addDetail(list, label, value) {
+      if (!value) return;
+      const term = document.createElement("dt");
+      const description = document.createElement("dd");
+      term.textContent = label;
+      description.textContent = value;
+      list.append(term, description);
+    }
+
+    function renderUniversities(universities) {
+      results.replaceChildren();
+      if (!universities || universities.length === 0) {
+        const empty = document.createElement("p");
+        empty.className = "empty";
+        empty.textContent = t("noResults");
+        results.append(empty);
+        return;
+      }
+
+      for (const university of universities) {
+        const card = document.createElement("article");
+        card.className = "university-card";
+
+        const title = document.createElement("h3");
+        title.textContent = university.name;
+        const location = document.createElement("p");
+        location.className = "location";
+        location.textContent = [university.city, university.country].filter(Boolean).join(", ");
+        const description = document.createElement("p");
+        description.className = "description";
+        description.textContent = university.description;
+        const details = document.createElement("dl");
+        addDetail(details, t("programsDetail"), university.programs);
+        addDetail(details, t("tuitionDetail"), university.tuition);
+        addDetail(details, t("deadlineDetail"), university.deadline);
+
+        const links = document.createElement("div");
+        links.className = "links";
+        const officialLink = safeLink(university.official_url, t("officialWebsite"));
+        const applicationLink = safeLink(university.application_url, t("applicationInformation"));
+        if (officialLink) links.append(officialLink);
+        if (applicationLink) links.append(applicationLink);
+
+        card.append(title, location, description, details);
+        if (links.childElementCount) card.append(links);
+        results.append(card);
+      }
+    }
+
+    async function searchUniversities() {
+      if (!db || !activeUserId) return;
+      const requestId = ++activeSearch;
+      const searchTerm = document.getElementById("query").value.trim().slice(0, 120);
+      const searchButton = document.getElementById("searchButton");
+      setBusy(searchButton, true, t("searchingBusy"));
+      showMessage(searchMsg, t("loading"), "");
+      results.replaceChildren();
+
+      try {
+        const { data, error } = await db.rpc("search_universities", { search_term: searchTerm });
+        if (requestId !== activeSearch || !activeUserId) return;
+        if (error) throw error;
+        latestUniversities = data || [];
+        renderUniversities(latestUniversities);
+        const countLabel = latestUniversities.length === 1 ? t("universityCountOne") : t("universityCountMany");
+        showMessage(searchMsg, `${latestUniversities.length} ${countLabel}`, "success");
+      } catch (error) {
+        if (requestId !== activeSearch) return;
+        latestUniversities = [];
+        showMessage(searchMsg, t("searchError", { error: error.message }), "error");
+      } finally {
+        if (requestId === activeSearch) setBusy(searchButton, false);
+      }
+    }
+
+    async function refreshSignedInView(user) {
+      const userId = user.id;
+      activeUserId = userId;
+      isAdmin = false;
+      document.getElementById("loggedOut").classList.add("hidden");
+      document.getElementById("loggedIn").classList.remove("hidden");
+      document.getElementById("universityArea").classList.remove("hidden");
+      document.getElementById("userName").textContent =
+        [user.user_metadata?.first_name, user.user_metadata?.last_name].filter(Boolean).join(" ") || user.email;
+      document.getElementById("adminPanel").classList.add("hidden");
+      clearMessage(authMsg);
+
+      const { data, error } = await db.rpc("is_university_admin");
+      if (activeUserId !== userId) return;
+      if (error) {
+        showLoginMessage(t("accountRoleError", { error: error.message }), "error");
+      } else {
+        isAdmin = data === true;
+        document.getElementById("adminPanel").classList.toggle("hidden", !isAdmin);
+      }
+      await searchUniversities();
+    }
+
+    function applySession(session) {
+      const user = session?.user;
+      if (!user) {
+        if (!activeUserId) {
+          document.getElementById("loggedOut").classList.remove("hidden");
+          document.getElementById("loggedIn").classList.add("hidden");
+          document.getElementById("universityArea").classList.add("hidden");
+          document.getElementById("adminPanel").classList.add("hidden");
+          return;
+        }
+        activeUserId = null;
+        isAdmin = false;
+        activeSearch += 1;
+        latestUniversities = [];
+        setBusy(document.getElementById("searchButton"), false);
+        document.getElementById("loggedOut").classList.remove("hidden");
+        document.getElementById("loggedIn").classList.add("hidden");
+        document.getElementById("universityArea").classList.add("hidden");
+        document.getElementById("adminPanel").classList.add("hidden");
+        results.replaceChildren();
+        clearMessage(searchMsg);
+        return;
+      }
+
+      if (activeUserId === user.id) return;
+      activeUserId = user.id;
+      window.setTimeout(() => {
+        if (activeUserId === user.id) void refreshSignedInView(user);
+      }, 0);
+    }
+
+    async function signUp() {
+      if (!authForm.reportValidity()) return;
+      const values = new FormData(authForm);
+      const button = document.getElementById("signUpButton");
+      setBusy(button, true, t("createBusy"));
+      clearMessage(authMsg);
+      try {
+        const { data, error } = await db.auth.signUp({
+          email: String(values.get("email")).trim(),
+          password: String(values.get("password")),
+          options: {
+            data: {
+              first_name: String(values.get("firstName")).trim(),
+              last_name: String(values.get("lastName")).trim()
+            },
+            emailRedirectTo: getEmailRedirectUrl()
+          }
+        });
+        if (error) throw error;
+        if (!data.session) {
+          showLoginMessage(t("accountCreated"), "success");
+        } else {
+          showLoginMessage(t("accountReady"), "success");
+        }
+      } catch (error) {
+        showLoginMessage(t("signupError", { error: error.message }), "error");
+      } finally {
+        setBusy(button, false);
+      }
+    }
+
+    async function resendConfirmation() {
+      const emailInput = document.getElementById("email");
+      if (!emailInput.reportValidity()) return;
+      const button = document.getElementById("resendConfirmationButton");
+      setBusy(button, true, t("resendBusy"));
+      clearMessage(authMsg);
+      try {
+        const { error } = await db.auth.resend({
+          type: "signup",
+          email: emailInput.value.trim(),
+          options: { emailRedirectTo: getEmailRedirectUrl() }
+        });
+        if (error) throw error;
+        showLoginMessage(t("resendSent"), "success");
+      } catch (error) {
+        showLoginMessage(t("resendError", { error: error.message }), "error");
+      } finally {
+        setBusy(button, false);
+      }
+    }
+
+    async function logIn() {
+      if (!document.getElementById("email").reportValidity()
+        || !document.getElementById("password").reportValidity()) return;
+      const values = new FormData(authForm);
+      const button = document.getElementById("logInButton");
+      setBusy(button, true, t("loginBusy"));
+      clearMessage(authMsg);
+      try {
+        const { error } = await db.auth.signInWithPassword({
+          email: String(values.get("email")).trim(),
+          password: String(values.get("password"))
+        });
+        if (error) throw error;
+      } catch (error) {
+        showLoginMessage(t("loginError", { error: error.message }), "error");
+      } finally {
+        setBusy(button, false);
+      }
+    }
+
+    async function logOut() {
+      const button = document.getElementById("logOutButton");
+      setBusy(button, true, t("logoutBusy"));
+      try {
+        const { error } = await db.auth.signOut();
+        if (error) throw error;
+        showLoginMessage(t("loggedOutMessage"), "success");
+      } catch (error) {
+        showLoginMessage(t("logoutError", { error: error.message }), "error");
+      } finally {
+        setBusy(button, false);
+      }
+    }
+
+    async function saveUniversity(event) {
+      event.preventDefault();
+      if (!isAdmin || !activeUserId) {
+        showMessage(adminMsg, t("adminOnly"), "error");
+        return;
+      }
+
+      const button = document.getElementById("saveUniversityButton");
+      const values = new FormData(universityForm);
+      const university = Object.fromEntries(values.entries());
+      for (const key of Object.keys(university)) {
+        university[key] = String(university[key]).trim();
+      }
+      setBusy(button, true, t("saveBusy"));
+      clearMessage(adminMsg);
+      try {
+        const { error } = await db.from("universities").insert(university);
+        if (error) throw error;
+        universityForm.reset();
+        document.getElementById("country").value = "Germany";
+        showMessage(adminMsg, t("universitySaved"), "success");
+        await searchUniversities();
+      } catch (error) {
+        showMessage(adminMsg, t("saveError", { error: error.message }), "error");
+      } finally {
+        setBusy(button, false);
+      }
+    }
+
+    document.getElementById("signUpButton").addEventListener("click", signUp);
+    document.getElementById("logInButton").addEventListener("click", logIn);
+    document.getElementById("resendConfirmationButton").addEventListener("click", resendConfirmation);
+    document.getElementById("logOutButton").addEventListener("click", logOut);
+    document.getElementById("languageSelect").addEventListener("change", (event) => {
+      applyLanguage(event.target.value);
+      localStorage.setItem("university-guide-language", currentLanguage);
+    });
+    searchForm.addEventListener("submit", (event) => {
+      event.preventDefault();
+      void searchUniversities();
+    });
+    universityForm.addEventListener("submit", saveUniversity);
+
+    async function initialize() {
+      if (!window.supabase) {
+        showLoginMessage(t("serviceUnavailable"), "error");
+        return;
+      }
+      db = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+      const { data, error } = await db.auth.getSession();
+      if (error) {
+        showLoginMessage(t("sessionError", { error: error.message }), "error");
+        return;
+      }
+      applySession(data.session);
+      db.auth.onAuthStateChange((_event, session) => applySession(session));
+    }
+
+    applyLanguage(localStorage.getItem("university-guide-language") || "en");
+    void initialize();
+  </script>
+</body>
+</html>

@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://ulashovsherali6-prog.github.io/university-guide/sitemap.xml
